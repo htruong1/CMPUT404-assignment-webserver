@@ -1,5 +1,6 @@
 #  coding: utf-8 
 import socketserver
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -29,10 +30,77 @@ import socketserver
 
 class MyWebServer(socketserver.BaseRequestHandler):
     
+    allowedMethods = "GET"
+
     def handle(self):
-        self.data = self.request.recv(1024).strip()
-        print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+
+        try:
+            self.data = self.request.recv(1024).strip()
+            requestData = self.data.decode("utf-8")
+            requestData = requestData.split(" ")
+
+            httpRequestType = requestData[0]   
+
+            if(httpRequestType == self.allowedMethods):
+                requestedURLFile = requestData[1]
+        
+                if(requestedURLFile == "/"):
+                    htmlFP = open("./www/index.html")
+                    indexHTML = htmlFP.read()
+                    httpHeader = "HTTP/1.1 200 OK \nContent-Type: text/html\n\n" + indexHTML +"\n"
+                    self.request.sendall(httpHeader.encode())
+                    return
+                else:
+                    isValid, path = self.getValidFilePath(requestedURLFile)
+                    
+                    if(isValid == "moved"):
+                        fp = open(path)
+                        fileToSend = fp.read()
+                        httpHeader = "HTTP/1.1 301 Moved to http://127.0.0.1:8080/deep/ \nLocation: http://127.0.0.1:8080/deep/\n\n"
+                        self.request.sendall(httpHeader.encode())
+
+                    elif(isValid == False):
+                        httpHeader = "HTTP/1.1 404 File does not exist\n\n"
+                        self.request.sendall(httpHeader.encode())
+                    
+                    else:
+                        fp = open(path)
+                        fileToSend = fp.read()
+                        httpHeader = ""
+                        if "html" in path:
+                            httpHeader = "HTTP/1.1 200 OK \nContent-Type: text/html\n\n" + fileToSend +"\n"
+                        
+                        elif "css" in path:
+                            httpHeader = "HTTP/1.1 200 OK \nContent-Type: text/css\n\n" + fileToSend +"\n"
+                       
+                        self.request.sendall(httpHeader.encode())
+
+            else:
+                httpHeader = "HTTP/1.1 405 Method not allowed\n\n"
+                self.request.sendall(httpHeader.encode())
+        except():
+            print("Error")
+
+    def getValidFilePath(self, requestedFileOrDir):
+            cwd = os.getcwd()
+            getPath = cwd + "/www" + requestedFileOrDir
+            resolvePath = os.path.normpath(getPath)
+
+            if(cwd not in resolvePath):
+                return (False, None)
+
+            isValidFile = os.path.isfile(getPath)
+            isValidFldr = os.path.isdir(getPath)
+
+            if(isValidFile):
+                return (True, getPath)
+            elif(isValidFldr):
+                if(getPath[-1] != "/"):
+                    return ("moved", getPath + "/index.html")
+                else:
+                    return (True, getPath + "index.html")
+            else:
+                return (False, None)
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
