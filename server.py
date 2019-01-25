@@ -71,6 +71,8 @@ class MyWebServer(socketserver.BaseRequestHandler):
                         
                         elif "css" in path:
                             httpHeader = "HTTP/1.1 200 OK \nContent-Type: text/css\n\n" + fileToSend +"\n"
+                        else: #if the file is not in html or css
+                            httpHeader = "HTTP/1.1 404 File does not exist\n\n"
                        
                         self.request.sendall(httpHeader.encode())
 
