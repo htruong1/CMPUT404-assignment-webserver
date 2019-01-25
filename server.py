@@ -54,7 +54,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
                         getHost = requestData[3].split("\r\n")
                         host = getHost[0]
                         redirectURL = requestedURLFile + "/"
-                        print(redirectURL)
                         httpHeader = "HTTP/1.1 301 Moved Permanently \nLocation: {}\n\n".format(redirectURL)
                         self.request.sendall(httpHeader.encode())
 
@@ -95,7 +94,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 return (True, getPath)
             elif(isValidFldr):
                 if(getPath[-1] != "/"):
-                    print("redirect")
                     return ("moved", requestedFileOrDir + "/")
                 else:
                     return (True, getPath + "index.html")
