@@ -20,7 +20,7 @@ server.py contains contributions from:
 * Mandy Meindersma 
 * Henry Truong (Worked on the assignment)
 
-Collaboraters
+Collaborators
 shchau1, dwai, ima, hiufungk
 
 
