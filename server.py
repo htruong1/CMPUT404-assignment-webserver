@@ -38,12 +38,10 @@ class MyWebServer(socketserver.BaseRequestHandler):
             self.data = self.request.recv(1024).strip()
             requestData = self.data.decode("utf-8")
             requestData = requestData.split(" ")
-
             httpRequestType = requestData[0]   
-
             if(httpRequestType == self.allowedMethods):
                 requestedURLFile = requestData[1]
-        
+
                 if(requestedURLFile == "/"):
                     htmlFP = open("./www/index.html")
                     indexHTML = htmlFP.read()
@@ -52,21 +50,23 @@ class MyWebServer(socketserver.BaseRequestHandler):
                     return
                 else:
                     isValid, path = self.getValidFilePath(requestedURLFile)
-                    
                     if(isValid == "moved"):
-                        fp = open(path)
-                        fileToSend = fp.read()
-                        httpHeader = "HTTP/1.1 301 Moved to http://127.0.0.1:8080/deep/ \nLocation: http://127.0.0.1:8080/deep/\n\n"
+                        getHost = requestData[3].split("\r\n")
+                        host = getHost[0]
+                        redirectURL = requestedURLFile + "/"
+                        print(redirectURL)
+                        httpHeader = "HTTP/1.1 301 Moved Permanently \nLocation: {}\n\n".format(redirectURL)
                         self.request.sendall(httpHeader.encode())
 
                     elif(isValid == False):
                         httpHeader = "HTTP/1.1 404 File does not exist\n\n"
                         self.request.sendall(httpHeader.encode())
                     
-                    else:
+                    elif (isValid == True):
                         fp = open(path)
                         fileToSend = fp.read()
                         httpHeader = ""
+                        
                         if "html" in path:
                             httpHeader = "HTTP/1.1 200 OK \nContent-Type: text/html\n\n" + fileToSend +"\n"
                         
@@ -91,12 +91,12 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
             isValidFile = os.path.isfile(getPath)
             isValidFldr = os.path.isdir(getPath)
-
             if(isValidFile):
                 return (True, getPath)
             elif(isValidFldr):
                 if(getPath[-1] != "/"):
-                    return ("moved", getPath + "/index.html")
+                    print("redirect")
+                    return ("moved", requestedFileOrDir + "/")
                 else:
                     return (True, getPath + "index.html")
             else:
